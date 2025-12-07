@@ -7,11 +7,11 @@ Ansible playbook for deploying a web server with monitoring and alerting.
 ## Usage
 ```bash
 # Full stack
-ansible-playbook -i inventory.yml site.yml
+ansible-playbook -i inventory.yml site.yml --ask-become
 
 # Individual components
-ansible-playbook -i inventory.yml playbook.yml --tags caddy
-ansible-playbook -i inventory.yml playbook.yml --tags monitoring
+ansible-playbook -i inventory.yml playbook.yml --tags caddy --ask-become
+ansible-playbook -i inventory.yml playbook.yml --tags monitoring --ask-become
 ```
 
 ## Infrastructure
@@ -47,6 +47,8 @@ Prometheus scrapes Caddy metrics from localhost:2019/metrics including:
 - `HighErrorRate` - HTTP 5xx errors detected
 - `SlowResponses` - Latency > 500ms
 - `HighRequestRate` - More than 100 req/sec
+
+**Note:** Alertmanager webhook points to localhost:5001 as placeholder. In production, configure email/Slack/PagerDuty.
 
 ## Design Decisions
 

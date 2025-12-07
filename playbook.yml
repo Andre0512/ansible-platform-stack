@@ -108,15 +108,25 @@
       notify: Restart Prometheus
       tags: [prometheus, monitoring, config]
 
-    - name: Configure Prometheus storage path in systemd
-      lineinfile:
-        path: /lib/systemd/system/prometheus.service
-        regexp: '^ExecStart='
-        line: 'ExecStart=/usr/bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus'
+    - name: Create Prometheus systemd override directory
+      file:
+        path: /etc/systemd/system/prometheus.service.d
+        state: directory
+        mode: '0755'
+      tags: [prometheus]
+
+    - name: Configure Prometheus storage path via systemd override
+      copy:
+        dest: /etc/systemd/system/prometheus.service.d/override.conf
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus
+        mode: '0644'
       notify:
         - Reload Systemd
         - Restart Prometheus
-      tags: [prometheus, monitoring]
+      tags: [prometheus]
 
     # ---------------------------------------------------
     # 5. Alertmanager Setup

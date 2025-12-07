@@ -4,7 +4,9 @@ all:
       hosts:
         web01:
           ansible_host: web01.basche.me
-          ansible_user: root
+          ansible_user: andre
+          ansible_become: true
+          ansible_become_method: sudo
           domain_name: "demo.basche.me"
           internal_ip: 192.168.121.2
 
@@ -12,6 +14,8 @@ all:
       hosts:
         web02:
           ansible_host: web02.basche.me
-          ansible_user: root
+          ansible_user: andre
+          ansible_become: true
+          ansible_become_method: sudo
           internal_ip: 192.168.121.1
 
