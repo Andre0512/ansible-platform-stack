@@ -1,5 +1,5 @@
 groups:
-  - name: gridscale_hiring_alerts
+  - name: caddy_alerts
     rules:
       - alert: CaddyServerDown
         expr: up{job="caddy"} == 0
@@ -8,25 +8,27 @@ groups:
           severity: critical
         annotations:
           summary: "Caddy web server is down"
-          description: "Instance {{ '{{' }} $labels.instance {{ '}}' }} of job {{ '{{' }} $labels.job {{ '}}' }} has been down for more than 30 seconds."
+          description: "Caddy has been down for more than 30 seconds."
 
       - alert: HighErrorRate
-        expr: rate(caddy_http_response_duration_seconds_count{status=~"5.."}[1m]) > 0
+        expr: rate(caddy_http_response_duration_seconds_count{code=~"5.."}[1m]) > 0
         for: 1m
         labels:
           severity: warning
         annotations:
-          summary: "High HTTP 5xx Error Rate"
+          summary: "High HTTP 5xx error rate"
           description: "Caddy is returning 5xx errors."
 
       - alert: SlowResponses
-        # Alerts if average latency is > 500ms over 1 minute
-        expr: rate(caddy_http_request_duration_seconds_sum[1m]) / rate(caddy_http_request_duration_seconds_count[1m]) > 0.5
+        expr: |
+          rate(caddy_http_request_duration_seconds_sum[1m]) 
+          / rate(caddy_http_request_duration_seconds_count[1m]) > 0.5
+          and rate(caddy_http_request_duration_seconds_count[1m]) > 0
         for: 1m
         labels:
           severity: warning
         annotations:
-          summary: "High Latency detected"
+          summary: "High latency detected"
           description: "Average request latency is above 0.5s."
 
       - alert: HighRequestRate
@@ -35,5 +37,5 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High request rate detected"
+          summary: "High request rate"
           description: "More than 100 requests/sec for 1 minute."
