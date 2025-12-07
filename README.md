@@ -7,11 +7,13 @@ Ansible playbook for deploying a web server with monitoring and alerting.
 ## Usage
 ```bash
 ansible-playbook -i inventory.yml playbook.yml
+ansible-playbook -i inventory.yml nginx.yml
 ```
 
 ## Components
 
-- **Caddy** - Web server with automatic HTTPS, metrics on `:2019/metrics`
+- **Caddy** - Web server with automatic HTTPS, reverse proxy, metrics on `:2019/metrics`
+- **Nginx** - Backend server (internal network)
 - **Prometheus** - Scrapes Caddy metrics, alert rules configured
 - **Alertmanager** - Alert routing (webhook receiver)
 
@@ -24,6 +26,7 @@ ansible-playbook -i inventory.yml playbook.yml
 ## Files
 ```
 ├── playbook.yml
+├── nginx.yml
 ├── inventory.yml
 └── templates/
     ├── Caddyfile.j2
@@ -36,6 +39,9 @@ ansible-playbook -i inventory.yml playbook.yml
 ```bash
 # Web server
 curl -I https://demo.basche.me
+
+# Nginx via reverse proxy
+curl https://demo.basche.me/nginx
 
 # Metrics
 curl http://localhost:2019/metrics

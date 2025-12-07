@@ -4,6 +4,7 @@
   become: true
   vars:
     domain_name: "demo.basche.me"
+    nginx_backend: "{{ hostvars['web02']['internal_ip'] }}"
 
   tasks:
     # ---------------------------------------------------

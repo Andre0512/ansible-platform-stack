@@ -1,0 +1,17 @@
+all:
+  children:
+    webservers:
+      hosts:
+        web01:
+          ansible_host: web01.basche.me
+          ansible_user: root
+          domain_name: "demo.basche.me"
+          internal_ip: 192.168.121.2
+
+    backends:
+      hosts:
+        web02:
+          ansible_host: web02.basche.me
+          ansible_user: root
+          internal_ip: 192.168.121.1
+

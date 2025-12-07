@@ -6,8 +6,18 @@
     root * /var/www/html
     encode gzip
     file_server
-    
+
     handle /metrics {
         metrics
+    }
+
+    # Reverse proxy to Nginx backend
+    handle /nginx* {
+        uri strip_prefix /nginx
+            reverse_proxy {{ nginx_backend }}:80 {
+            health_uri /
+            health_interval 10s
+            health_timeout 5s
+        }
     }
 }
