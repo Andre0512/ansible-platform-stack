@@ -3,7 +3,7 @@
   hosts: webservers
   become: true
   vars:
-    domain_name: "demo.basche.me"
+    domain_name: "{{ hostvars['web01']['domain_name'] }}"
     nginx_backend: "{{ hostvars['web02']['internal_ip'] }}"
 
   tasks:
@@ -14,6 +14,7 @@
       apt:
         update_cache: yes
         cache_valid_time: 3600
+      tags: [system, always]
 
     - name: Install required system packages
       apt:
@@ -24,6 +25,7 @@
           - debian-archive-keyring
           - apt-transport-https
         state: present
+      tags: [system]
 
     # ---------------------------------------------------
     # 2. Caddy Server Setup
@@ -32,17 +34,20 @@
       shell: curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
       args:
         creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+      tags: [caddy]
 
     - name: Add Caddy repository
       apt_repository:
         repo: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
         filename: caddy-stable
         state: present
+      tags: [caddy]
 
     - name: Install Caddy
       apt:
         name: caddy
         state: latest
+      tags: [caddy]
 
     # ---------------------------------------------------
     # 3. Content Deployment
@@ -52,12 +57,14 @@
         path: /var/www/html
         state: directory
         mode: '0755'
+      tags: [caddy, content]
 
     - name: Deploy simple index.html
       template:
         src: templates/index.html.j2
         dest: /var/www/html/index.html
         mode: '0644'
+      tags: [caddy, content]
 
     - name: Deploy Caddyfile configuration
       template:
@@ -65,6 +72,7 @@
         dest: /etc/caddy/Caddyfile
         mode: '0644'
       notify: Reload Caddy
+      tags: [caddy, config]
 
     # ---------------------------------------------------
     # 4. Prometheus Setup
@@ -73,8 +81,8 @@
       apt:
         name: prometheus
         state: present
+      tags: [prometheus, monitoring]
 
-    # Fixes the permission issue we had manually earlier
     - name: Ensure Prometheus data directory exists with correct permissions
       file:
         path: /var/lib/prometheus
@@ -82,6 +90,7 @@
         owner: prometheus
         group: prometheus
         mode: '0755'
+      tags: [prometheus, monitoring]
 
     - name: Deploy Alert Rules
       template:
@@ -89,6 +98,7 @@
         dest: /etc/prometheus/alerts.yml
         mode: '0644'
       notify: Restart Prometheus
+      tags: [prometheus, monitoring, alerts]
 
     - name: Deploy Prometheus config
       template:
@@ -96,8 +106,8 @@
         dest: /etc/prometheus/prometheus.yml
         mode: '0644'
       notify: Restart Prometheus
+      tags: [prometheus, monitoring, config]
 
-    # We modify the service file to ensure storage path is correct (Fix for the panic error)
     - name: Configure Prometheus storage path in systemd
       lineinfile:
         path: /lib/systemd/system/prometheus.service
@@ -106,6 +116,7 @@
       notify:
         - Reload Systemd
         - Restart Prometheus
+      tags: [prometheus, monitoring]
 
     # ---------------------------------------------------
     # 5. Alertmanager Setup
@@ -114,12 +125,14 @@
       apt:
         name: prometheus-alertmanager
         state: present
+      tags: [alertmanager, monitoring]
 
     - name: Create Alertmanager systemd override directory
       file:
         path: /etc/systemd/system/prometheus-alertmanager.service.d
         state: directory
         mode: '0755'
+      tags: [alertmanager, monitoring]
 
     - name: Disable Alertmanager clustering (single-node setup)
       copy:
@@ -132,6 +145,7 @@
       notify:
         - Reload Systemd
         - Restart Alertmanager
+      tags: [alertmanager, monitoring]
 
     - name: Deploy Alertmanager config
       template:
@@ -139,23 +153,28 @@
         dest: /etc/prometheus/alertmanager.yml
         mode: '0644'
       notify: Restart Alertmanager
+      tags: [alertmanager, monitoring, config]
 
   handlers:
     - name: Reload Caddy
       service:
         name: caddy
         state: reloaded
+      tags: [caddy]
 
     - name: Reload Systemd
       systemd:
         daemon_reload: yes
+      tags: [system]
 
     - name: Restart Prometheus
       service:
         name: prometheus
         state: restarted
+      tags: [prometheus]
 
     - name: Restart Alertmanager
       service:
         name: prometheus-alertmanager
         state: restarted
+      tags: [alertmanager]

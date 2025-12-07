@@ -28,3 +28,12 @@ groups:
         annotations:
           summary: "High Latency detected"
           description: "Average request latency is above 0.5s."
+
+      - alert: HighRequestRate
+        expr: rate(caddy_http_requests_total[1m]) > 100
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request rate detected"
+          description: "More than 100 requests/sec for 1 minute."
