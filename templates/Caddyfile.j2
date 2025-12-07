@@ -1,23 +1,27 @@
-{
-    admin localhost:2019
-}
-
 {{ domain_name }} {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+
     root * /var/www/html
     encode gzip
     file_server
 
-    handle /metrics {
-        metrics
-    }
-
-    # Reverse proxy to Nginx backend
     handle /nginx* {
         uri strip_prefix /nginx
-            reverse_proxy {{ nginx_backend }}:80 {
+        reverse_proxy {{ nginx_backend }}:80 {
             health_uri /
             health_interval 10s
             health_timeout 5s
+            health_status 200
+
+            fail_duration 30s
+            max_fails 3
+
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
         }
     }
 }
