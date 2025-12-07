@@ -15,17 +15,9 @@
         state: present
 
     - name: Deploy Hello World page
-      copy:
+      template:
+        src: templates/nginx-index.html.j2
         dest: /var/www/html/index.html
-        content: |
-          <!DOCTYPE html>
-          <html>
-          <head><title>Nginx Backend</title></head>
-          <body>
-            <h1>Hello from Nginx!</h1>
-            <p>Server: {{ inventory_hostname }}</p>
-          </body>
-          </html>
         mode: '0644'
 
     - name: Ensure Nginx is running
