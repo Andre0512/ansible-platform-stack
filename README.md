@@ -54,7 +54,7 @@ Prometheus scrapes Caddy metrics from localhost:2019/metrics including:
 
 **Internal network for backend** - web02 has no public HTTP port. Caddy on web01 terminates SSL and proxies to Nginx internally. Reduces attack surface.
 
-**Minimal firewall rules** - Only necessary ports exposed. Prometheus and Alertmanager not reachable from outside.
+**Minimal firewall rules** - Only necessary ports exposed. Prometheus and Alertmanager not reachable from outside. (Configured via Gridscale Cloud Panel)
 
 **Path-based routing** - `/nginx` routes to backend. Simple to verify and debug.
 

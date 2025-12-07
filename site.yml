@@ -1,7 +1,7 @@
 ---
-- name: Deploy full stack
-  import_playbook: playbook.yml
-
 - name: Deploy Nginx backend
   import_playbook: nginx.yml
+
+- name: Deploy Caddy stack
+  import_playbook: playbook.yml
 
