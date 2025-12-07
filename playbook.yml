@@ -1,0 +1,160 @@
+---
+- name: Configure Platform Engineer Task Infrastructure
+  hosts: webservers
+  become: true
+  vars:
+    domain_name: "demo.basche.me"
+
+  tasks:
+    # ---------------------------------------------------
+    # 1. System Prep
+    # ---------------------------------------------------
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required system packages
+      apt:
+        name:
+          - curl
+          - gnupg
+          - debian-keyring
+          - debian-archive-keyring
+          - apt-transport-https
+        state: present
+
+    # ---------------------------------------------------
+    # 2. Caddy Server Setup
+    # ---------------------------------------------------
+    - name: Download Caddy GPG key
+      shell: curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+      args:
+        creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+    - name: Add Caddy repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+        filename: caddy-stable
+        state: present
+
+    - name: Install Caddy
+      apt:
+        name: caddy
+        state: latest
+
+    # ---------------------------------------------------
+    # 3. Content Deployment
+    # ---------------------------------------------------
+    - name: Create web root directory
+      file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+    - name: Deploy simple index.html
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+    - name: Deploy Caddyfile configuration
+      template:
+        src: templates/Caddyfile.j2
+        dest: /etc/caddy/Caddyfile
+        mode: '0644'
+      notify: Reload Caddy
+
+    # ---------------------------------------------------
+    # 4. Prometheus Setup
+    # ---------------------------------------------------
+    - name: Install Prometheus
+      apt:
+        name: prometheus
+        state: present
+
+    # Fixes the permission issue we had manually earlier
+    - name: Ensure Prometheus data directory exists with correct permissions
+      file:
+        path: /var/lib/prometheus
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0755'
+
+    - name: Deploy Alert Rules
+      template:
+        src: templates/alerts.yml.j2
+        dest: /etc/prometheus/alerts.yml
+        mode: '0644'
+      notify: Restart Prometheus
+
+    - name: Deploy Prometheus config
+      template:
+        src: templates/prometheus.yml.j2
+        dest: /etc/prometheus/prometheus.yml
+        mode: '0644'
+      notify: Restart Prometheus
+
+    # We modify the service file to ensure storage path is correct (Fix for the panic error)
+    - name: Configure Prometheus storage path in systemd
+      lineinfile:
+        path: /lib/systemd/system/prometheus.service
+        regexp: '^ExecStart='
+        line: 'ExecStart=/usr/bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus'
+      notify:
+        - Reload Systemd
+        - Restart Prometheus
+
+    # ---------------------------------------------------
+    # 5. Alertmanager Setup
+    # ---------------------------------------------------
+    - name: Install Alertmanager
+      apt:
+        name: prometheus-alertmanager
+        state: present
+
+    - name: Create Alertmanager systemd override directory
+      file:
+        path: /etc/systemd/system/prometheus-alertmanager.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Disable Alertmanager clustering (single-node setup)
+      copy:
+        dest: /etc/systemd/system/prometheus-alertmanager.service.d/override.conf
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/prometheus-alertmanager --config.file=/etc/prometheus/alertmanager.yml --cluster.listen-address=""
+        mode: '0644'
+      notify:
+        - Reload Systemd
+        - Restart Alertmanager
+
+    - name: Deploy Alertmanager config
+      template:
+        src: templates/alertmanager.yml.j2
+        dest: /etc/prometheus/alertmanager.yml
+        mode: '0644'
+      notify: Restart Alertmanager
+
+  handlers:
+    - name: Reload Caddy
+      service:
+        name: caddy
+        state: reloaded
+
+    - name: Reload Systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Restart Prometheus
+      service:
+        name: prometheus
+        state: restarted
+
+    - name: Restart Alertmanager
+      service:
+        name: prometheus-alertmanager
+        state: restarted

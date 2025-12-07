@@ -1,0 +1,13 @@
+{
+    admin localhost:2019
+}
+
+{{ domain_name }} {
+    root * /var/www/html
+    encode gzip
+    file_server
+    
+    handle /metrics {
+        metrics
+    }
+}

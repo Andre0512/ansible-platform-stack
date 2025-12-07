@@ -1,0 +1,7 @@
+# Ansible
+*.retry
+inventory.yml
+
+# Secrets
+*.vault
+secrets.yml

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ ansible_facts['hostname'] }} - Status</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+        hr { border: 0; border-top: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+    <h1>System Operational</h1>
+    
+    <p>This node is managed via Ansible.</p>
+
+    <ul>
+        <li><strong>Hostname:</strong> {{ ansible_facts['hostname'] }}</li>
+        <li><strong>Operating System:</strong> {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}</li>
+        <li><strong>Architecture:</strong> {{ ansible_facts['architecture'] }}</li>
+        <li><strong>Virtualization:</strong> {{ ansible_facts['virtualization_type'] }}</li>
+    </ul>
+
+    <hr>
+
+    <p>
+        Metrics endpoint: <a href="/metrics">/metrics</a>
+    </p>
+
+</body>
+</html>

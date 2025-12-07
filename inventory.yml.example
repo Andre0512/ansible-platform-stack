@@ -1,0 +1,7 @@
+all:
+  children:
+    webservers:
+      hosts:
+        demo.basche.me:
+          ansible_host: <SERVER_IP>
+          ansible_user: root
