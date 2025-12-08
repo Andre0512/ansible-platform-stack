@@ -14,6 +14,11 @@ ansible-playbook -i inventory.yml playbook.yml --tags caddy --ask-become
 ansible-playbook -i inventory.yml playbook.yml --tags monitoring --ask-become
 ```
 
+## Requirements
+
+- Ubuntu 24.04 (tested) 
+- Ansible 2.9+
+
 ## Infrastructure
 
 **web01** (Caddy, Prometheus, Alertmanager)
